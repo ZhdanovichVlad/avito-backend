@@ -1,0 +1,101 @@
+[33mcommit 90b7ca70105930bc2d59fc159539af7641c374dd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Merge: 4312014 8f50658
+Author: ZhdanovichVlad <zhdanvla@gmail.com>
+Date:   Mon Sep 9 23:25:09 2024 +0600
+
+    Merge branch 'master' of https://git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721218-team-79237/zadanie-6105
+
+[33mcommit 431201402b7d1b01f70899566ee4f095bca201c2[m
+Author: ZhdanovichVlad <zhdanvla@gmail.com>
+Date:   Mon Sep 9 23:19:07 2024 +0600
+
+    add get task Hendler
+
+[33mcommit 8f5065873a12f76f6395e2ed9e43e08166d7128e[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Mon Sep 9 15:29:17 2024 +0000
+
+    Update data types in zadanie
+
+[33mcommit 2dd48a793ae2cf51d2ef4d4ba67783b2231d8a0a[m
+Author: ZhdanovichVlad <zhdanvla@gmail.com>
+Date:   Mon Sep 9 13:42:56 2024 +0600
+
+    fixe DockerFile
+
+[33mcommit 4ced5556ccfe9afcbeacffb37f351a708db800c9[m
+Author: ZhdanovichVlad <zhdanvla@gmail.com>
+Date:   Sun Sep 8 23:42:49 2024 +0600
+
+    fixed dockerfile
+
+[33mcommit 2634b3c17b17cf992b2566cf6301ba7a57616a14[m
+Author: ZhdanovichVlad <zhdanvla@gmail.com>
+Date:   Sun Sep 8 13:53:18 2024 +0600
+
+    fixe Dockerfile
+
+[33mcommit c7778da72a3724cdb07ec43237040be8bf9c2dac[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m
+Author: ZhdanovichVlad <zhdanvla@gmail.com>
+Date:   Sun Sep 8 12:51:32 2024 +0600
+
+    add congif packege
+
+[33mcommit 25142d709d9c6aa2a653489ab7a0adba95c56dbe[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Sat Sep 7 13:14:09 2024 +0000
+
+    Update openapi.yml
+
+[33mcommit d69df4eebf8d70d2adc7d96f29919c6a440091f7[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Fri Sep 6 06:51:26 2024 +0000
+
+    fix readme
+
+[33mcommit fd4f6c6e85cba19d7b7177353add4bff84db87b4[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Thu Sep 5 10:32:45 2024 +0000
+
+    remove DB
+
+[33mcommit e291a59b4e2ad8b12ac39fc1ba710158e4de9a62[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Wed Sep 4 11:52:31 2024 +0000
+
+    add DB info to Readme
+
+[33mcommit 39917d1e39f6a1f64bcc906d77f23eed9fb4e8da[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Wed Sep 4 11:47:15 2024 +0000
+
+    add задание
+
+[33mcommit fec4f06336d84116d5182ba449b386b953a38f56[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Fri Aug 30 13:02:44 2024 +0000
+
+    Update README.md
+
+[33mcommit 88425a8fa4ece9c216f9d318a404c5436aa923af[m
+Merge: c60ed40 6d1f809
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Fri Aug 30 12:56:20 2024 +0000
+
+    Merge branch 'main' into 'master'
+    
+    Initial commit
+    
+    See merge request avito-testirovanie-na-backend-1270/template_6105!1
+
+[33mcommit 6d1f80907bb963d4030ccc466ce730c1bdb26bad[m
+Author: Artem Eliseev <st4x4@live.ru>
+Date:   Fri Aug 30 12:56:20 2024 +0000
+
+    Initial commit
+
+[33mcommit c60ed40e49599e01653f93502ffea75760b8e0ec[m
+Author: Nikita <nh@codenrock.com>
+Date:   Fri Aug 30 11:48:37 2024 +0000
+
+    Initial commit
