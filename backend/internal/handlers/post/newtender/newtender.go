@@ -46,7 +46,6 @@ func NewTenderH(server createTender) http.HandlerFunc {
 			return
 		}
 
-		tender.Status = "Created"
 		if typecheck.IsTenderServiceTypeIncorrect(tender.ServiceType) {
 			msgErr := fmt.Errorf("incorrectly specified tender type")
 			response.AnswerError(writer, request, op, http.StatusBadRequest, msgErr)
@@ -91,6 +90,7 @@ func NewTenderH(server createTender) http.HandlerFunc {
 			return
 		}
 
+		tender.Status = "Created"
 		tender.CreatedAt = time.Now()
 		tender.Version = 1
 		id, err := server.CreateTender(tender)

@@ -17,6 +17,5 @@ const BidSearchTenderId = 2
 // description of server methods for working with get handles
 type ServerGet interface {
 	GetTenders(tenders *[]models.Tender, limit, offset int, searchInfo string, serchingType int) error
-	GetTenderStatus(id string) (status string, err error)
 	handlers.DataServerChecks
 }
