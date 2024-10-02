@@ -1,13 +1,13 @@
 package main
 
 import (
-	tenderApplication "avitoTest/backend/application/tender"
-	"avitoTest/backend/config"
-	"avitoTest/backend/domain/shared"
-	"avitoTest/backend/infrastructure/postgresdb"
-	"avitoTest/backend/interfaces/http/handlers/ping"
-	"avitoTest/backend/interfaces/http/handlers/tenders"
-	NewRouter "avitoTest/backend/interfaces/router"
+	tenderApplication "avitoTest/backend/internal/application/tender"
+	"avitoTest/backend/internal/config"
+	"avitoTest/backend/internal/domain/shared"
+	"avitoTest/backend/internal/infrastructure/postgresdb"
+	"avitoTest/backend/internal/presentation/http/handlers/ping"
+	"avitoTest/backend/internal/presentation/http/handlers/tenders"
+	NewRouter "avitoTest/backend/internal/presentation/router"
 	"flag"
 	"log"
 	"net/http"
@@ -32,14 +32,14 @@ func main() {
 	storageData.CreateTables()
 
 	//business logic related to user and company verification
-	logic := shared.NewSharedDonain(storageData)
+	logic := shared.NewSharedDomain(storageData)
 
-	tenderApplication := tenderApplication.NewTenderApplication{storageData, logic}
+	tenderApplication := tenderApplication.Application{storageData, logic}
 
 	router := NewRouter.NewRouter()
 
 	ping.PingController(router)
-	tenders.AddTenderController(router, tenderApplication)
+	tender.AddTenderController(router, tenderApplication)
 
 	addr := "0.0.0.0:8080"
 
