@@ -1,14 +1,17 @@
 package main
 
 import (
+	tenderApplication "avitoTest/backend/internal/application/tender"
+	"avitoTest/backend/internal/config"
+	"avitoTest/backend/internal/domain/shared"
+	"avitoTest/backend/internal/infrastructure/postgresdb"
+	"avitoTest/backend/internal/presentation/http/handlers/ping"
+	"avitoTest/backend/internal/presentation/http/handlers/tenders"
+	NewRouter "avitoTest/backend/internal/presentation/router"
 	"flag"
 	"log"
 	"net/http"
 	"time"
-
-	"avitoTest/backend/internal/config"
-	NewRouter "avitoTest/backend/internal/http/router"
-	"avitoTest/backend/internal/storage"
 )
 
 func main() {
@@ -23,31 +26,20 @@ func main() {
 	}
 
 	conf := config.MustLoad(isLocal)
-	storageData := storage.ConnectToStorage(conf, isLocal)
+	storageData := postgresdb.ConnectToStorage(conf, isLocal)
+
 	defer storageData.Close()
 	storageData.CreateTables()
 
-	//err := storageData.NewTenderStorage()
-	//if err != nil {
-	//	log.Fatal("failed to create tender storage")
-	//}
-	//err = storageData.NewVersionStorage()
-	//if err != nil {
-	//	log.Fatal("failed to create version storage")
-	//}
-	//err = storageData.CreateBidsDB()
-	//if err != nil {
-	//	log.Fatal("failed to create version storage")
-	//}
-	//
-	//err = storageData.CreateBidStory()
-	//if err != nil {
-	//	log.Fatal("failed to create bid story storage")
-	//}
+	//business logic related to user and company verification
+	logic := shared.NewSharedDomain(storageData)
 
-	//storageData.CreateRelation()
+	tenderApplication := tenderApplication.Application{storageData, logic}
 
-	router := NewRouter.NewRouter(storageData)
+	router := NewRouter.NewRouter()
+
+	ping.PingController(router)
+	tender.AddTenderController(router, tenderApplication)
 
 	addr := "0.0.0.0:8080"
 
