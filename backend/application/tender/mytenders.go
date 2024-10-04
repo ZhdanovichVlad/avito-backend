@@ -4,7 +4,6 @@ import (
 	"avitoTest/backend/domain/tender"
 	"errors"
 	"fmt"
-	"net/http"
 )
 
 func (s NewTenderApplication) GetMyTenders(limit, offset, username string, tenders *[]tender.Tender) (httpCode int, msgErr error) {

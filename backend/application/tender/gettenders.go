@@ -8,17 +8,17 @@ import (
 	"avitoTest/backend/domain/tender"
 )
 
-func (serever NewTenderApplication) GetTender(limit, offset, serviceType string, tenders *[]tender.Tender) (httpCode int, msgErr error) {
+func (server NewTenderApplication) GetTender(limit, offset, serviceType string, tenders *[]tender.Tender) (httpCode int, msgErr error) {
 	const op = "backend.application.tender.gettenders"
 
-	limitInt, offsetInt, err := serever.DataValidator.LimitAndOffsetCheck(limit, offset)
+	limitInt, offsetInt, err := server.DataValidator.LimitAndOffsetCheck(limit, offset)
 	if err != nil {
-		msgErr = errors.New("connot convert limit or offset to int")
+		msgErr = errors.New("can not convert limit or offset to int")
 		httpCode = http.StatusBadRequest
 		return
 	}
 
-	if serviceType != "" && serever.DataValidator.IsTenderServiceTypeIncorrect(serviceType) {
+	if serviceType != "" && server.DataValidator.IsTenderServiceTypeIncorrect(serviceType) {
 		msgErr = fmt.Errorf("incorrectly specified tender service type")
 		httpCode = http.StatusBadRequest
 		return
@@ -33,7 +33,7 @@ func (serever NewTenderApplication) GetTender(limit, offset, serviceType string,
 
 	*tenders = make([]tender.Tender, 0, limitInt)
 
-	err = serever.TenderInfrastructure.GetTenders(tenders, limitInt, offsetInt, serviceType, searchType)
+	err = server.TenderInfrastructure.GetTenders(tenders, limitInt, offsetInt, serviceType, searchType)
 	if err != nil {
 		err = fmt.Errorf("error when receiving data from the server. %w", err)
 		httpCode = http.StatusInternalServerError

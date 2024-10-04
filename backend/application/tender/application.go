@@ -13,3 +13,5 @@ type NewTenderApplication struct {
 	TenderInfrastructure tender.TenderInfrastructure
 	DataValidator        shared.DataValidator
 }
+
+//hello

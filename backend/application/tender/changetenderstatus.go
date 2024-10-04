@@ -8,11 +8,11 @@ import (
 	"net/http"
 )
 
-// ChencgeTenderStatus Function for changing the status of a tender
-func (serever NewTenderApplication) ChencgeTenderStatus(tender *tender.Tender, tenderId, status, username string) (httpCode int, errMsg error) {
+// ChangeTenderStatus Function for changing the status of a tender
+func (server NewTenderApplication) ChangeTenderStatus(tender *tender.Tender, tenderId, status, username string) (httpCode int, errMsg error) {
 	const op = "application.tender.changetenderstatus"
 
-	err := serever.TenderInfrastructure.GetFullTender(tender, tenderId)
+	err := server.TenderInfrastructure.GetFullTender(tender, tenderId)
 	if err != nil {
 		if errors.Is(err, storageerror.ErrTenderNotFound) {
 			msgErr := fmt.Errorf("op - %s tender not found. %w", op, err)
@@ -22,13 +22,13 @@ func (serever NewTenderApplication) ChencgeTenderStatus(tender *tender.Tender, t
 		return http.StatusInternalServerError, msgErr
 	}
 
-	httpCode, err = serever.DataValidator.FullExist(username, tender.OrganizationId)
+	httpCode, err = server.DataValidator.FullExist(username, tender.OrganizationId)
 	if err != nil {
 		msgErr := fmt.Errorf("op - %s. Error - %w.", op, err)
 		return httpCode, msgErr
 	}
 
-	err = serever.TenderInfrastructure.UpdateTenderStatus(tenderId, status)
+	err = server.TenderInfrastructure.UpdateTenderStatus(tenderId, status)
 	if err != nil {
 		msgErr := fmt.Errorf("op - %s. Failed to update the status of the tender. Error - %w.", op, err)
 		return http.StatusInternalServerError, msgErr
