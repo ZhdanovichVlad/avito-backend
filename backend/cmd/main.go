@@ -1,62 +1,36 @@
 package main
 
 import (
-	tenderApplication "avitoTest/backend/application/tender"
-	"avitoTest/backend/config"
-	"avitoTest/backend/domain/shared"
-	"avitoTest/backend/infrastructure/postgresdb"
-	"avitoTest/backend/interfaces/http/handlers/ping"
-	"avitoTest/backend/interfaces/http/handlers/tenders"
-	NewRouter "avitoTest/backend/interfaces/router"
+	"avitoTest/backend/internal/application"
+	"avitoTest/backend/internal/config"
+	"avitoTest/backend/internal/handlers/tender"
+	"avitoTest/backend/internal/repository"
+	tenderUC "avitoTest/backend/internal/usecase/tender"
+	"avitoTest/backend/pkg/http/ginrouter"
 	"flag"
-	"log"
-	"net/http"
-	"time"
+	"fmt"
 )
 
 func main() {
 	env := flag.String("env", "", "Specify environment (e.g. 'local')")
 	flag.Parse()
-
 	isLocal := false
-
+	fmt.Println(*env)
 	// Если передан флаг -env=local, используем .env.local
 	if *env == "local" {
 		isLocal = true
 	}
 
 	conf := config.MustLoad(isLocal)
-	storageData := postgresdb.ConnectToStorage(conf, isLocal)
-
+	storageData := repository.ConnectToStorage(conf, isLocal)
 	defer storageData.Close()
 	storageData.CreateTables()
-
-	//business logic related to user and company verification
-	logic := shared.NewSharedDonain(storageData)
-
-	tenderApplication := tenderApplication.NewTenderApplication{storageData, logic}
-
-	router := NewRouter.NewRouter()
-
-	ping.PingController(router)
-	tenders.AddTenderController(router, tenderApplication)
-
 	addr := "0.0.0.0:8080"
+	tenderUseCase := tenderUC.New(storageData)
+	tenderHadnlers := tender.NewTenderHandlers(tenderUseCase)
 
-	srv := &http.Server{
-		Addr:         addr,
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
-	log.Println("server started on", addr)
-
-	if err := srv.ListenAndServe(); err != nil {
-		log.Panic("failed to start server")
-	}
-
-	log.Println("stopping server")
-
+	router := ginrouter.New()
+	app := application.New(router)
+	app.RegisterTenderHandlers(tenderHadnlers)
+	app.Run(addr)
 }
