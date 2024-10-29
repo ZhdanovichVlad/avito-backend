@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"avitoTest/backend/internal/config"
-	"fmt"
 	"log"
 
 	"database/sql"
@@ -13,26 +11,7 @@ type Storage struct {
 	db *sql.DB
 }
 
-func ConnectToStorage(config *config.Config, isLocal bool) *Storage {
-	var connStr string
-	if isLocal {
-		connStr = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-			config.PostgresUserName, config.PostgresPassword, config.PostgresDatabase)
-	} else {
-		connStr = fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=require",
-			config.PostgresUserName, config.PostgresPassword, config.PostgresHost, config.PostgresPort, config.PostgresDatabase)
-	}
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatalf("Error opening database: %v", err)
-	}
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatalf("Error during connection verification: %v", err)
-	}
-
-	log.Println("Connection to the database was successful")
+func New(db *sql.DB) *Storage {
 	return &Storage{db: db}
 }
 

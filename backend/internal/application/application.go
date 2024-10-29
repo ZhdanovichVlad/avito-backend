@@ -1,7 +1,7 @@
 package application
 
 import (
-	TenderHandlers "avitoTest/backend/internal/handlers/tender"
+	"avitoTest/backend/internal/handlers"
 	"avitoTest/backend/pkg/http/ginrouter"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -25,12 +25,11 @@ func New(router *ginrouter.Router) *application {
 	return &app
 }
 
-func (a application) RegisterTenderHandlers(h *TenderHandlers.TenderHandlers) {
+func (a application) RegisterTenderHandlers(h *handlers.TenderPresentation) {
 
 	api := a.router.R.Group(tenderBasePath)
-	{
-		api.POST(newTenderPath, h.CreateNewTenderGin)
-	}
+	api.POST(newTenderPath, h.CreateNewGin)
+	api.GET("", h.GetAllGin)
 }
 
 func (a application) Run(host string) {

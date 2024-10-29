@@ -1,16 +1,16 @@
 package repository
 
 import (
+	"avitoTest/backend/internal/entity"
+	"avitoTest/backend/pkg/errorsx"
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
-
-	"avitoTest/backend/internal/entity/tender"
 )
 
 // NewTenderStorage
 func (s *Storage) NewTenderStorage() error {
-
 	createType := `
 	CREATE TYPE service_type AS ENUM ('Construction', 'Delivery', 'Manufacture');
 `
@@ -52,7 +52,7 @@ func (s *Storage) NewTenderStorage() error {
 }
 
 // CreateTender Creating a new tender
-func (s *Storage) CreateTender(context context.Context, tender *tender.Tender) (string, error) {
+func (s *Storage) CreateTender(context context.Context, tender *entity.Tender) (string, error) {
 	const op = "storage.CreateTender"
 
 	insertQuery := `
@@ -64,69 +64,70 @@ func (s *Storage) CreateTender(context context.Context, tender *tender.Tender) (
 	stmt, err := s.db.Prepare(insertQuery)
 	defer stmt.Close()
 	if err != nil {
-		return "", fmt.Errorf("%s. Error preparing statement: %v", op, err)
+		return "", errorsx.ErrPreparingStatement
 	}
 
 	var ID string
 	err = stmt.QueryRowContext(context, tender.Name, tender.Description, tender.ServiceType, tender.Status, tender.OrganizationId, tender.CreatorUsername, tender.Version, tender.CreatedAt).Scan(&ID)
 	if err != nil {
-		return "", fmt.Errorf("%s. Error executing query: %v", op, err)
+		return "", errorsx.ErrExecutingQuery
 	}
-
 	return ID, nil
 }
 
-//
-//func (s *Storage) GetTenders(tenders *[]tender.Tender, limit, offset int, searchInfo string, serchingType int) error {
-//	const op = "storage.GetTenders"
-//	status := "Published"
-//	var query string
-//	switch serchingType {
-//	case 0:
-//		query = "SELECT id, name, description, serviceType, status, version, createdAt FROM tenders where status=$1 ORDER BY name LIMIT $2 OFFSET $3"
-//	case 1:
-//		query = "SELECT id, name, description, serviceType, status, version, createdAt FROM tenders WHERE status=$1 and serviceType = $2 ORDER BY name LIMIT $3 OFFSET $4"
-//	case 2:
-//		query = "SELECT id, name, description, serviceType, status, version, createdAt FROM tenders WHERE  creatorUsername = $1 ORDER BY name LIMIT $2 OFFSET $3"
-//	default:
-//		return fmt.Errorf("unknown serchingType: %d", serchingType)
-//	}
-//	stmt, err := s.db.Prepare(query)
-//	if err != nil {
-//		return fmt.Errorf("%s. Error preparing statement: %v", op, err)
-//	}
-//	defer stmt.Close()
-//
-//	var rows *sql.Rows
-//	switch serchingType {
-//	case 0:
-//		rows, err = stmt.Query(status, limit, offset)
-//	case 1:
-//		rows, err = stmt.Query(status, searchInfo, limit, offset)
-//	case 2:
-//		rows, err = stmt.Query(searchInfo, limit, offset)
-//	}
-//	if err != nil {
-//		return fmt.Errorf("%s. Error executing query: %v", op, err)
-//	}
-//	defer rows.Close()
-//
-//	for rows.Next() {
-//		tender := tender.Tender{}
-//		err = rows.Scan(&tender.Id, &tender.Name, &tender.Description, &tender.ServiceType,
-//			&tender.Status, &tender.Version, &tender.CreatedAt)
-//		if err != nil {
-//			return fmt.Errorf("%s. failed scan from database: %v", op, err)
-//		}
-//		*tenders = append(*tenders, tender)
-//	}
-//
-//	if err = rows.Err(); err != nil {
-//		return fmt.Errorf("%s. rows.Next() contains errors: %v", op, err)
-//	}
-//
-//	return nil
-//}
+func (s *Storage) GetTenders(context context.Context, limit, offset int, searchInfo string, searchingType int) ([]entity.Tender, error) {
+	status := "Published"
+	var query string
+	tenders := make([]entity.Tender, limit)
+	switch searchingType {
+	case 0:
+		query = "SELECT id, name, description, serviceType, status, version, createdAt FROM tenders where status=$1 ORDER BY name LIMIT $2 OFFSET $3"
+	case 1:
+		query = "SELECT id, name, description, serviceType, status, version, createdAt FROM tenders WHERE status=$1 and serviceType = $2 ORDER BY name LIMIT $3 OFFSET $4"
+	case 2:
+		query = "SELECT id, name, description, serviceType, status, version, createdAt FROM tenders WHERE  creatorUsername = $1 ORDER BY name LIMIT $2 OFFSET $3"
+	default:
+		return nil, errorsx.ErrInvalidSearchingType
+	}
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return nil, errorsx.ErrPreparingStatement
+	}
+	defer stmt.Close()
+
+	var rows *sql.Rows
+	switch searchingType {
+	case 0:
+		rows, err = stmt.QueryContext(context, status, limit, offset)
+	case 1:
+		rows, err = stmt.QueryContext(context, searchInfo, limit, offset)
+	case 2:
+		rows, err = stmt.QueryContext(context, searchInfo, limit, offset)
+	default:
+		return nil, errorsx.ErrInvalidSearchingType
+	}
+	if err != nil {
+		return nil, errorsx.ErrExecutingQuery
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		tender := entity.Tender{}
+		err = rows.Scan(&tender.Id, &tender.Name, &tender.Description, &tender.ServiceType,
+			&tender.Status, &tender.Version, &tender.CreatedAt)
+		if err != nil {
+			return nil, errorsx.ErrScanRows
+		}
+		tenders = append(tenders, tender)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, errorsx.ErrScanRows
+	}
+
+	return tenders, nil
+}
+
 //
 //// GetFullTender returns one tender(name, description, serviceType, version) by id
 //func (s *Storage) GetFullTender(tender *tender.Tender, tenderId string) error {

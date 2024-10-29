@@ -2,35 +2,45 @@ package main
 
 import (
 	"avitoTest/backend/internal/application"
-	"avitoTest/backend/internal/config"
-	"avitoTest/backend/internal/handlers/tender"
+	"avitoTest/backend/internal/handlers"
 	"avitoTest/backend/internal/repository"
-	tenderUC "avitoTest/backend/internal/usecase/tender"
+	"avitoTest/backend/internal/usecase"
 	"avitoTest/backend/pkg/http/ginrouter"
-	"flag"
-	"fmt"
+	"log"
+	"os"
+
+	"github.com/joho/godotenv"
+
+	"database/sql"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	env := flag.String("env", "", "Specify environment (e.g. 'local')")
-	flag.Parse()
-	isLocal := false
-	fmt.Println(*env)
-	// Если передан флаг -env=local, используем .env.local
-	if *env == "local" {
-		isLocal = true
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %w", err)
+	}
+	REGISTRY_DB_DSB := os.Getenv("REGISTRY_DB_DSB")
+
+	db, err := sql.Open("postgres", REGISTRY_DB_DSB)
+	if err != nil {
+		log.Fatalf("Error opening database: %v", err)
 	}
 
-	conf := config.MustLoad(isLocal)
-	storageData := repository.ConnectToStorage(conf, isLocal)
-	defer storageData.Close()
-	storageData.CreateTables()
+	err = db.Ping()
+	if err != nil {
+		log.Fatalf("Error during connection verification: %v", err)
+	}
+
+	defer db.Close()
+	storge := repository.New(db)
+
 	addr := "0.0.0.0:8080"
-	tenderUseCase := tenderUC.New(storageData)
-	tenderHadnlers := tender.NewTenderHandlers(tenderUseCase)
+	tenderUseCase := usecase.New(storge)
+	tenderHandlers := handlers.NewTenderPresentation(tenderUseCase)
 
 	router := ginrouter.New()
 	app := application.New(router)
-	app.RegisterTenderHandlers(tenderHadnlers)
+	app.RegisterTenderHandlers(tenderHandlers)
 	app.Run(addr)
 }
