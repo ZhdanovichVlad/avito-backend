@@ -8,8 +8,8 @@ import (
 )
 
 // ValidateResponsibleEmployee method checks whether the employee is responsible in the organization
-func (s *Storage) ValidateResponsibleEmployee(context context.Context, organizationId, creatorUsername string) (bool, error) {
-	const op = "repository.ValidateResponsibleEmployee"
+func (s *Storage) ValidateResponsibleEmployee(context context.Context, organizationId, creatorUsername string) error {
+	const op = "repository.validation.ValidateResponsibleEmployee"
 
 	var exists bool
 	query := `SELECT EXISTS (SELECT 1
@@ -20,16 +20,39 @@ func (s *Storage) ValidateResponsibleEmployee(context context.Context, organizat
 
 	stmt, err := s.db.Prepare(query)
 	if err != nil {
-		return false, errorsx.ErrScanRows
+		errorsx.New(errorsx.ErrInternal, "preparation query error", op, err)
 	}
 
 	err = stmt.QueryRowContext(context, creatorUsername, organizationId).Scan(&exists)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
+			return errorsx.New(errorsx.ErrForbidden, "An employee of the organization is not responsible for the organization", op, err)
 		} else {
-			return false, errorsx.ErrScanRows
+			return errorsx.New(errorsx.ErrInternal, "QueryRow error", op, err)
+
 		}
 	}
-	return exists, nil
+	return nil
+}
+
+// CheckUserExists
+func (s *Storage) CheckUserExists(context context.Context, creatorUsername string) error {
+	const op = "repository.validation.CheckUserExists"
+	var exists bool
+	query := `SELECT EXISTS (SELECT 1 FROM employee WHERE username = $1)`
+
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		errorsx.New(errorsx.ErrInternal, "preparation query error", op, err)
+	}
+
+	err = stmt.QueryRowContext(context, creatorUsername).Scan(&exists)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errorsx.New(errorsx.ErrBadRequest, "The employee doesn't exist", op, err)
+		} else {
+			return errorsx.New(errorsx.ErrInternal, "QueryRow error", op, err)
+		}
+	}
+	return nil
 }

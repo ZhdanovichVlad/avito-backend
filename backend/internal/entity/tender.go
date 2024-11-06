@@ -1,8 +1,8 @@
 package entity
 
 import (
-	"avitoTest/backend/dto"
-	"fmt"
+	"avitoTest/backend/internal/entityjson"
+	"avitoTest/backend/pkg/errorsx"
 	"time"
 )
 
@@ -17,67 +17,66 @@ const (
 
 // Tender Structure describing server attributes with tenders
 type Tender struct {
-	Id              string
-	Name            string
-	Description     string
-	ServiceType     string
-	Status          string
-	OrganizationId  string
-	CreatorUsername string
-	Version         int
-	CreatedAt       time.Time
+	Id              string    `json:"id,omitempty"`
+	Name            string    `json:"name,omitempty"`
+	Description     string    `json:"description,omitempty"`
+	ServiceType     string    `json:"serviceType,omitempty"`
+	Status          string    `json:"status,omitempty"`
+	OrganizationId  string    `json:"organizationId,omitempty"`
+	CreatorUsername string    `json:"creatorUsername,omitempty"`
+	Version         int       `json:"verstion,omitempty"`
+	CreatedAt       time.Time `json:"createdAt,omitempty"`
 }
 
-func NewTenderUseCase(tenderDTO dto.TenderHandler) (Tender, error) {
+// NewTender Create new tender entity
+func NewTender(tenderJSON entityjson.Tender) *Tender {
 	tender := Tender{}
-	tender.Id = tenderDTO.Id
-	tender.Name = tenderDTO.Name
-	tender.Description = tenderDTO.Description
+	tender.Name = tenderJSON.Name
+	tender.Description = tenderJSON.Description
+	tender.ServiceType = tenderJSON.ServiceType
 	tender.Status = TenderStatusCreated
-	tender.OrganizationId = tenderDTO.OrganizationId
-	tender.CreatorUsername = tenderDTO.CreatorUsername
+	tender.OrganizationId = tenderJSON.OrganizationId
+	tender.CreatorUsername = tenderJSON.CreatorUsername
 	tender.Version = 1
-	tender.CreatedAt = time.Now()
+	return &tender
+}
 
-	if len([]rune(tender.Name)) > 100 && len([]rune(tender.Name)) != 0 {
-		return Tender{}, fmt.Errorf("name len more than 100 or emty")
-	}
-	if len([]rune(tender.Description)) > 500 && len([]rune(tender.Description)) != 0 {
-		return Tender{}, fmt.Errorf("description len more than 500 or emty")
-	}
-	if len([]rune(tender.CreatorUsername)) > 100 && len([]rune(tender.CreatorUsername)) != 0 {
-		return Tender{}, fmt.Errorf("description len more than 500 or emty")
-	}
-	err := ValidationTenderServiceType(tender.ServiceType)
-	if err != nil {
-		return Tender{}, err
-	}
-
-	return tender, nil
+// NewTender Create new tender entity
+func NewTenderForUpdate(tenderJSON entityjson.Tender) *Tender {
+	tender := Tender{}
+	tender.Name = tenderJSON.Name
+	tender.Description = tenderJSON.Description
+	tender.ServiceType = tenderJSON.ServiceType
+	return &tender
 }
 
 // ValidationTenderServiceType checks if the Tender type corresponds to the specified values
 func ValidationTenderServiceType(serviceType string) error {
-	if serviceType == TenderServiceTypeConstruction {
+	const op = "internal.entity.ValidationTenderServiceType"
+	switch serviceType {
+	case TenderServiceTypeConstruction:
 		return nil
-	} else if serviceType == TenderServiceTypeDelivery {
+	case TenderServiceTypeDelivery:
 		return nil
-	} else if serviceType == TenderServiceTypeManufacture {
+	case TenderServiceTypeManufacture:
 		return nil
-	} else {
-		return fmt.Errorf("incorrect service type")
+
+	default:
+		return errorsx.New(errorsx.ErrBadRequest, "incorrect service type", op, nil)
 	}
 }
 
 // ValidationTenderStatus checks if the tender status corresponds to the specified values
 func ValidationTenderStatus(tenderStatus string) error {
-	if tenderStatus == TenderStatusCreated {
+	const op = "internal.entity.ValidationTenderStatus"
+	switch tenderStatus {
+	case TenderStatusCreated:
 		return nil
-	} else if tenderStatus == TenderStatusPublished {
+	case TenderStatusPublished:
 		return nil
-	} else if tenderStatus == TenderStatusClosed {
+	case TenderStatusClosed:
 		return nil
-	} else {
-		return fmt.Errorf("incorrect status")
+	default:
+		return errorsx.New(errorsx.ErrBadRequest, "incorrect tender status", op, nil)
 	}
 }

@@ -1,82 +1,191 @@
 package usecase
 
 import (
-	"avitoTest/backend/internal/entity"
-	"avitoTest/backend/internal/handlers"
-	"avitoTest/backend/pkg/errorsx"
 	"context"
+
+	"avitoTest/backend/internal/entity"
+	"avitoTest/backend/internal/entityjson"
 )
 
-const (
-	ServiceTypeIsEmpty  = 0
-	ServiceTypeNotEmpty = 1
-	UsernameSearch      = 2
-)
-
-type TenderApplacation struct {
-	tenderRepository TenderUseCaseInterface
-	//DataValidator        shared.DataValidator
+type TenderService struct {
+	tenderRepository TenderRepository
 }
 
-func New(repo TenderUseCaseInterface) *TenderApplacation {
-	return &TenderApplacation{tenderRepository: repo}
+func New(repo TenderRepository) *TenderService {
+	return &TenderService{tenderRepository: repo}
 }
 
 // Create method for creating a new tender
-func (server *TenderApplacation) Create(context context.Context, input handlers.TenderDTO) (entity.Tender, error) {
-	tender, err := entity.NewTenderUseCase(input)
+func (t *TenderService) Create(context context.Context, tenderJson entityjson.Tender) (entity.Tender, error) {
+	tender := entity.NewTender(tenderJson)
+
+	err := entity.ValidationTenderServiceType(tender.ServiceType)
 	if err != nil {
-		return entity.Tender{}, errorsx.ErrInvalidData
+		return entity.Tender{}, err
 	}
 
-	exist, err := server.tenderRepository.ValidateResponsibleEmployee(context, tender.OrganizationId, tender.CreatorUsername)
+	err = t.tenderRepository.ValidateResponsibleEmployee(context, tender.OrganizationId, tender.CreatorUsername)
 	if err != nil {
-		return entity.Tender{}, errorsx.ErrInternalRepository
-	}
-	if !exist {
-		return entity.Tender{}, errorsx.ErrEmployeeNotResponsible
+		return entity.Tender{}, err
 	}
 
-	id, err := server.tenderRepository.CreateTender(context, &tender)
+	id, err := t.tenderRepository.CreateTender(context, tender)
 	if err != nil {
-		return entity.Tender{}, errorsx.ErrInternalRepository
+		return entity.Tender{}, err
 	}
 
 	tender.Id = id
+	return *tender, nil
+}
+
+func (t *TenderService) Get(context context.Context, limit, offset int, serviceInfo string) ([]entity.Tender, error) {
+	const op = "usecase.tender.Get"
+
+	var err error
+	var tenders []entity.Tender
+
+	switch serviceInfo {
+	case "":
+		tenders, err = t.tenderRepository.GetTenders(context, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		err = entity.ValidationTenderServiceType(serviceInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		tenders, err = t.tenderRepository.GetTenders(context, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return tenders, nil
+}
+
+func (t *TenderService) GetMy(context context.Context, limit, offset int, userName string) ([]entity.Tender, error) {
+	const op = "usecase.tender.Get"
+
+	var err error
+	var tenders []entity.Tender
+
+	err = t.tenderRepository.CheckUserExists(context, userName)
+	if err != nil {
+		return nil, err
+	}
+
+	tenders, err = t.tenderRepository.GetUserTenders(context, limit, offset, userName)
+	if err != nil {
+		return nil, err
+	}
+
+	return tenders, nil
+}
+
+func (t *TenderService) GetStatus(context context.Context, tenderId, userName string) (string, error) {
+	const op = "usecase.tender.GetStatus"
+
+	err := t.tenderRepository.CheckUserExists(context, userName)
+	if err != nil {
+		return "", nil
+	}
+
+	status, companyid, err := t.tenderRepository.GetTenderStatus(context, tenderId)
+
+	err = t.tenderRepository.ValidateResponsibleEmployee(context, companyid, userName)
+	if err != nil {
+		return "", nil
+	}
+
+	return status, nil
+}
+
+func (t *TenderService) ChangeStatus(context context.Context, tenderId, userName, status string) (entity.Tender, error) {
+	const op = "usecase.tender.GetStatus"
+	err := entity.ValidationTenderStatus(status)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	err = t.tenderRepository.CheckUserExists(context, userName)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	tender, err := t.tenderRepository.GetTender(context, tenderId)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	err = t.tenderRepository.ValidateResponsibleEmployee(context, tender.OrganizationId, userName)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	newStatus, err := t.tenderRepository.UpdateTenderStatus(context, tenderId, status)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	tender.Status = newStatus
 	return tender, nil
 }
 
-func (server *TenderApplacation) Get(context context.Context, limit, offset, serviceInfo string) ([]entity.Tender, error) {
+func (t *TenderService) ChangeTender(context context.Context, tenderId, userName string, tenderJson entityjson.Tender) (entity.Tender, error) {
+	const op = "usecase.tender.ChangeTender"
 
-	limitInt, offsetInt, err := LimitAndOffsetValidation(limit, offset)
+	tenderOld, err := t.tenderRepository.GetTender(context, tenderId)
 	if err != nil {
-		return nil, errorsx.ErrInvalidData
+		return entity.Tender{}, nil
 	}
-
-	if serviceInfo != "" {
-		err = entity.ValidationTenderServiceType(serviceInfo)
-		if err != nil {
-			return nil, errorsx.ErrInvalidData
-		}
-	}
-
-	if serviceInfo != "" {
-		err = entity.ValidationTenderServiceType(serviceInfo)
-		if err != nil {
-			return nil, errorsx.ErrInvalidServiceType
-		}
-	}
-
-	var searchingType int
-	if serviceInfo == "" {
-		searchingType = ServiceTypeIsEmpty
-	} else {
-		searchingType = ServiceTypeNotEmpty
-	}
-
-	tenders, err := server.tenderRepository.GetTenders(context, limitInt, offsetInt, serviceInfo, searchingType)
+	err = t.tenderRepository.ValidateResponsibleEmployee(context, tenderOld.OrganizationId, userName)
 	if err != nil {
-		return nil, errorsx.ErrInternalRepository
+		return entity.Tender{}, nil
 	}
-	return tenders, nil
+
+	tenderNew := entity.NewTenderForUpdate(tenderJson)
+
+	err = entity.ValidationTenderServiceType(tenderNew.ServiceType)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	tenderNew.Id = tenderId
+	err = t.tenderRepository.UpdateTender(context, tenderNew)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	tender, err := t.tenderRepository.GetTender(context, tenderId)
+	if err != nil {
+		return entity.Tender{}, err
+	}
+
+	return tender, nil
+}
+
+func (t *TenderService) RollbackTender(context context.Context, tenderId, userName string, version int) (entity.Tender, error) {
+	const op = "usecase.tender.ChangeTender"
+
+	tender, err := t.tenderRepository.GetTender(context, tenderId)
+	if err != nil {
+		return entity.Tender{}, nil
+	}
+	err = t.tenderRepository.ValidateResponsibleEmployee(context, tender.OrganizationId, userName)
+	if err != nil {
+		return entity.Tender{}, nil
+	}
+	err = t.tenderRepository.RollBackTender(context, tenderId, version)
+	if err != nil {
+		return entity.Tender{}, nil
+	}
+
+	tender, err = t.tenderRepository.GetTender(context, tenderId)
+	if err != nil {
+		return entity.Tender{}, nil
+	}
+
+	return tender, nil
 }
