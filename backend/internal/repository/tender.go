@@ -8,48 +8,6 @@ import (
 	"errors"
 )
 
-//// NewTenderStorage
-//func (s *Storage) NewTenderStorage() error {
-//	createType := `
-//	CREATE TYPE service_type AS ENUM ('Construction', 'Delivery', 'Manufacture');
-//`
-//	_, err := s.db.Exec(createType)
-//	if err != nil {
-//		msgErr := fmt.Errorf("service_type have already been created", err)
-//		log.Println(msgErr)
-//	}
-//
-//	createType = `
-//	CREATE TYPE tender_status AS ENUM ('Created', 'Published', 'Closed');
-//`
-//	_, err = s.db.Exec(createType)
-//	if err != nil {
-//		msgErr := fmt.Errorf("tender_status have already been created", err)
-//		log.Println(msgErr)
-//	}
-//
-//	createTableSQL := `
-//  	CREATE TABLE IF NOT EXISTS tenders (
-//		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-//		name VARCHAR(100) NOT NULL,
-//		description VARCHAR(500) NOT NULL,
-//		serviceType service_type NOT NULL,
-//		status tender_status NOT NULL,
-//	    organizationId UUID REFERENCES organization(id) ON DELETE CASCADE,
-//		creatorUsername VARCHAR(50) REFERENCES employee(username),
-//		version INT DEFAULT 1 NOT NULL,
-//		createdAt TIMESTAMP NOT NULL
-//	 );`
-//
-//	_, err = s.db.Exec(createTableSQL)
-//	if err != nil {
-//		msgErr := fmt.Errorf("Error creating table:", err)
-//		log.Println(msgErr)
-//		return msgErr
-//	}
-//	return nil
-//}
-
 // CreateTender Creating a new tender
 func (s *Storage) CreateTender(context context.Context, tender *entity.Tender) (string, error) {
 	const op = "repository.tender.CreateTender"
