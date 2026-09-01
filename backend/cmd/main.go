@@ -1,62 +1,56 @@
 package main
 
 import (
-	tenderApplication "avitoTest/backend/internal/application/tender"
-	"avitoTest/backend/internal/config"
-	"avitoTest/backend/internal/domain/shared"
-	"avitoTest/backend/internal/infrastructure/postgresdb"
-	"avitoTest/backend/internal/presentation/http/handlers/ping"
-	"avitoTest/backend/internal/presentation/http/handlers/tenders"
-	NewRouter "avitoTest/backend/internal/presentation/router"
-	"flag"
+	"fmt"
+	"go.uber.org/zap"
 	"log"
-	"net/http"
-	"time"
+	"os"
+
+	"avitoTest/backend/internal/application"
+	"avitoTest/backend/internal/handlers"
+	"avitoTest/backend/internal/repository"
+	"avitoTest/backend/internal/usecase"
+	"avitoTest/backend/pkg/http/ginrouter"
+
+	"database/sql"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/pressly/goose/v3"
 )
 
 func main() {
-	env := flag.String("env", "", "Specify environment (e.g. 'local')")
-	flag.Parse()
-
-	isLocal := false
-
-	// Если передан флаг -env=local, используем .env.local
-	if *env == "local" {
-		isLocal = true
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %w", err)
 	}
 
-	conf := config.MustLoad(isLocal)
-	storageData := postgresdb.ConnectToStorage(conf, isLocal)
+	REGISTRY_DB_DSB := os.Getenv("REGISTRY_DB_DSB")
 
-	defer storageData.Close()
-	storageData.CreateTables()
-
-	//business logic related to user and company verification
-	logic := shared.NewSharedDomain(storageData)
-
-	tenderApplication := tenderApplication.Application{storageData, logic}
-
-	router := NewRouter.NewRouter()
-
-	ping.PingController(router)
-	tender.AddTenderController(router, tenderApplication)
-
-	addr := "0.0.0.0:8080"
-
-	srv := &http.Server{
-		Addr:         addr,
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	db, err := sql.Open("postgres", REGISTRY_DB_DSB)
+	defer db.Close()
+	if err != nil {
+		log.Fatalf("error opening database: %v", err)
+	}
+	err = goose.Up(db, "migrations")
+	if err != nil {
+		fmt.Println(os.Getwd())
+		log.Fatalf("migrations error: %v", err)
 	}
 
-	log.Println("server started on", addr)
-
-	if err := srv.ListenAndServe(); err != nil {
-		log.Panic("failed to start server")
+	err = db.Ping()
+	if err != nil {
+		log.Fatalf("Error during connection verification: %v", err)
 	}
+	storge := repository.New(db)
 
-	log.Println("stopping server")
+	addr := os.Getenv("host")
+	tenderUseCase := usecase.New(storge)
+	tenderController := handlers.NewTenderController(tenderUseCase)
 
+	router := ginrouter.New()
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	app := application.New(router, logger)
+	app.RegisterTenderHandlers(tenderController)
+	app.Run(addr)
 }
